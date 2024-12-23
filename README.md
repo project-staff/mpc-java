@@ -1,1 +1,1 @@
-MPC client written in Java
+MPC client and server written in Java
