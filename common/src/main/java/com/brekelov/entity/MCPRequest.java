@@ -1,4 +1,4 @@
-package com.example.entity;
+package com.brekelov.entity;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ import java.util.Map;
  * }
  */
 
-public class MCPMessage {
+public class MCPRequest {
   private String jsonrpc = "2.0"; // JSON-RPC version
   private Integer id;            // Request/response ID
   private String method;         // RPC method (e.g., "initialize")
@@ -35,18 +35,18 @@ public class MCPMessage {
   private String error;          // Error message (if applicable)
 
   // Constructors
-  public MCPMessage(Integer id, String method, Map<String, Object> params) {
+  public MCPRequest(Integer id, String method, Map<String, Object> params) {
     this.id = id;
     this.method = method;
     this.params = params;
   }
 
-  public MCPMessage(Integer id, Map<String, Object> result) {
+  public MCPRequest(Integer id, Map<String, Object> result) {
     this.id = id;
     this.result = result;
   }
 
-  public MCPMessage(Integer id, String error) {
+  public MCPRequest(Integer id, String error) {
     this.id = id;
     this.error = error;
   }
