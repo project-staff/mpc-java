@@ -28,4 +28,5 @@ package com.brekelov.entity;
  * }
  */
 public class MCPResponse {
+  
 }

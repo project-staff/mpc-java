@@ -1,14 +1,21 @@
 package com.example;
 
-import com.brekelov.entity.MCPRequest;
-import com.brekelov.entity.MCPResponse;
+import com.brekelov.entity.Schema.ClientCapabilities;
+import com.brekelov.entity.Schema.ClientCapabilities.RootCapabilities;
+import com.brekelov.entity.Schema.ClientCapabilities.Sampling;
+import com.brekelov.entity.Schema.Implementation;
+import com.brekelov.entity.Schema.InitializeRequest;
+import com.brekelov.entity.Schema.JSONRPCRequest;
+import com.brekelov.entity.Schema.JSONRPCResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
 
 public class MCPClient {
 
@@ -18,12 +25,13 @@ public class MCPClient {
 
   public MCPClient(HttpClient client, String serviceUrl) {
     this.serviceUrl = serviceUrl;
+    this.objectMapper = new ObjectMapper();
     this.client = client;
   }
 
-  public void init(MCPRequest mcpMessage) {
+  public JSONRPCResponse init(JSONRPCRequest mcpMessage)  {
 
-    String jsonRequest = null;
+    String jsonRequest;
     try {
       jsonRequest = objectMapper.writeValueAsString(mcpMessage);
     } catch (JsonProcessingException e) {
@@ -31,22 +39,43 @@ public class MCPClient {
     }
 
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(this.serviceUrl))
+        .uri(URI.create(String.format("%s/mcp/init", this.serviceUrl)))
         .POST(HttpRequest.BodyPublishers.ofString(jsonRequest))
+        .header("Content-Type", "application/json")
         .build();
 
-    HttpResponse<String> request = client.send(request, BodyHandlers.ofString());
+    HttpResponse<String> response;
+    try {
+      response = client.send(request, BodyHandlers.ofString());
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
 
-    objectMapper.readValue(request, MCPResponse.class)
+    try {
+      return objectMapper.readValue(response.body(), JSONRPCResponse.class);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static void main(String[] args) {
 
     HttpClient client = HttpClient.newHttpClient();
 
-    var mcpClient = new MCPClient(client, "http://localhost:8081");
+    var mcpClient = new MCPClient(client, "http://localhost:8080");
 
-    mcpClient.init(new MCPRequest());
+    var impl = new Implementation("name", "version");
+
+    var cap = new ClientCapabilities(new HashMap<>(), new RootCapabilities(true), new Sampling());
+    JSONRPCRequest mcpMessage = new JSONRPCRequest(
+        "jsonrpc",
+        "method",
+        "id",
+        new InitializeRequest("1", cap, impl)
+    );
+    JSONRPCResponse response = mcpClient.init(mcpMessage);
+
+    System.out.println(response);
   }
 
 }
