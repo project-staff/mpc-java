@@ -1,8 +1,14 @@
 package com.example;
 
+import com.brekelov.entity.MCPRequest;
+import com.brekelov.entity.MCPResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 
 public class MCPClient {
 
@@ -15,20 +21,23 @@ public class MCPClient {
     this.client = client;
   }
 
+  public void init(MCPRequest mcpMessage) {
 
-
-  public void init(MCPMessage mcpMessage) {
-
-    var jsonRequest =
-
-        ObjectMapper objectMapper = new ObjectMapper();
-    Car car = new Car("yellow", "renault");
-    objectMapper.writeValue(new File("target/car.json"), car);
+    String jsonRequest = null;
+    try {
+      jsonRequest = objectMapper.writeValueAsString(mcpMessage);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
 
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(this.serviceUrl))
         .POST(HttpRequest.BodyPublishers.ofString(jsonRequest))
         .build();
+
+    HttpResponse<String> request = client.send(request, BodyHandlers.ofString());
+
+    objectMapper.readValue(request, MCPResponse.class)
   }
 
   public static void main(String[] args) {
@@ -37,7 +46,7 @@ public class MCPClient {
 
     var mcpClient = new MCPClient(client, "http://localhost:8081");
 
-    mcpClient.init();
+    mcpClient.init(new MCPRequest());
   }
 
 }
